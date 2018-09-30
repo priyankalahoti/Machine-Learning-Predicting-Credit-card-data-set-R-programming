@@ -1,0 +1,131 @@
+---
+title: "Predicting Credit Card Fraudulent Transactions Using Synthetic Data Generation"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Libraries
+```{r}
+library(ggplot2)
+library(corrplot)
+library(ROSE)
+library(rpart)
+```
+# Credit card dataset
+credit card dataset is downloded from kaggle.com. data contains 31 variables namely Time,V1,v2,...V28,Amount,Class and having 284,807 observations.
+data is already scaled using PCA.Data is highly imbalanced that means,there are only 492 fraudulant transcations out of 284807 transactions.
+
+#  Loading dataset
+```{r}
+data=read.csv("C:\\Users\\AJIT\\Documents\\creditcard.csv")
+```
+#  Preprocessing
+Since data is already scaled so we already prepeared for Exploratory data Analaysis,but before that we will check if there is any missing values. 
+```{r}
+sum(is.na(data))    ## No Missing data
+```
+# Exploratory Data analysis
+## Know about data
+```{r}
+str(data)
+```
+## Discriptive measures
+```{r}
+summary(data)
+```
+
+# Correlation
+Since ,data is generated using PCA that means there is no corrleation among them and this can be verify as below
+```{r}
+cordata=subset(data,select=-c(Time,Class,Amount))
+corre=cor(cordata)
+corre
+corrplot(corre, order = "FPC", method = "color",
+         type = "lower", tl.cex = 0.7, tl.col = rgb(0, 0, 0))
+```
+As,we see,there is no corrleation. 
+
+## Distribution of Class variable 
+given, probelm is binary classification having two class 1 and 0.
+```{r}
+table(data$Class)
+prop.table(table(data$Class))*100
+ggplot(data,aes(x=Class))+geom_bar(color="green",fill="red")
+ggplot(data, aes(x = Class, y = Amount)) + geom_boxplot(color="blue") +
+  ggtitle("Distribution of transaction amount by class")
+
+```
+Cleary ,data is highly imbalanced with 492 observation from positive class and 284315 from negative class.
+# Data Spliting
+```{r}
+size<- floor(0.75 * nrow(data))
+set.seed(123)
+train_ind <- sample(seq_len(nrow(data)), size =size)
+train <- data[train_ind, ]
+test <- data[-train_ind, ]
+```
+# Methods for Imbalanced Classification Problem
+###below methods are sampling methods used for imbalanced dataset.
+
+## Undersampling
+## Oversampling
+## Synthetic data generation
+## Cost sensitive Learning
+
+here,we use only Synthetic data generation method ,Since this method is robust one than first two methods.
+but,before that we will check how model perform without this method.
+# Modelling
+## Decision tree without sampling method
+We will use ROC curve as metrics ,since accuarcy is not good choice while working with imbalanced data classification problem.
+```{r}
+dt<- rpart(Class~ .,train)
+pred<- predict(dt,test)
+accuracy.meas(test$Class, pred)
+```
+Above metrics is not enough to evaluate our model,so we use AUC.
+```{r}
+roc.curve(test$Class, pred, plotit = T)
+```
+## Decision tree with sampling method
+In R,there is package called ROSE(Random Over Sapmling Examples) used for implementing sampling method. 
+```{r}
+data.rose <- ROSE(Class~.,train, seed = 1)$data
+table(data.rose$Class)
+dt.rose <- rpart(Class ~ .,data.rose)
+pred.tree.rose <- predict(dt.rose,test)
+accuracy.meas(test$Class, pred.tree.rose)
+
+roc.curve(test$Class, pred.tree.rose,plotit = T)
+```
+Clearly sampling method is robust one with AUC 0.932
+
+## Logistic Regression Without Sampling
+
+```{r}
+glm=glm(Class~.,train,family = binomial)
+pre<- predict(glm,test)
+accuracy.meas(test$Class, pre)
+roc.curve(test$Class, pre,plotit = T)
+```
+## Logistic Regression With Sampling
+```{r}
+
+glm=glm(Class~.,data.rose,family = binomial)
+pre<- predict(glm,test)
+accuracy.meas(test$Class, pre)
+roc.curve(test$Class, pre,plotit = T)
+```
+Again Sampling technique outperformed with AUC 0.971
+
+#Summary
+Here,we have implement only two models decion tree and Logistic regression.
+we get robust model logistic regression with sampling.
+we,can still improve our AUC while trying other models.
+we can also use parameter tuning technique to optimized our models.
+```{r}
+
+```
