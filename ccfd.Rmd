@@ -21,7 +21,7 @@ data is already scaled using PCA.Data is highly imbalanced that means,there are 
 
 #  Loading dataset
 ```{r}
-data=read.csv("C:\\Users\\AJIT\\Documents\\creditcard.csv")
+data=read.csv("C:\\Documents\\creditcard.csv")
 ```
 #  Preprocessing
 Since data is already scaled so we already prepeared for Exploratory data Analaysis,but before that we will check if there is any missing values. 
